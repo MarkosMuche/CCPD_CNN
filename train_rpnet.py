@@ -178,7 +178,7 @@ class fh02(nn.Module):
         self.wR2 = torch.nn.DataParallel(self.wR2, device_ids=range(torch.cuda.device_count()))
         if not path is None:
             self.wR2.load_state_dict(torch.load(path, map_location ='cpu'))
-            # self.wR2 = self.wR2.cuda()
+            # self.wR2 = self.wR2
         # for param in self.wR2.parameters():
         #     param.requires_grad = False
 
@@ -198,15 +198,15 @@ class fh02(nn.Module):
         boxLoc = self.wR2.module.classifier(x9)
 
         h1, w1 = _x1.data.size()[2], _x1.data.size()[3]
-        p1 = torch.FloatTensor([[w1, 0, 0, 0], [0, h1, 0, 0], [0, 0, w1, 0], [0, 0, 0, h1]]).cuda()
+        p1 = torch.FloatTensor([[w1, 0, 0, 0], [0, h1, 0, 0], [0, 0, w1, 0], [0, 0, 0, h1]])
         h2, w2 = _x3.data.size()[2], _x3.data.size()[3]
-        p2 = torch.FloatTensor([[w2, 0, 0, 0], [0, h2, 0, 0], [0, 0, w2, 0], [0, 0, 0, h2]]).cuda()
+        p2 = torch.FloatTensor([[w2, 0, 0, 0], [0, h2, 0, 0], [0, 0, w2, 0], [0, 0, 0, h2]])
         h3, w3 = _x5.data.size()[2], _x5.data.size()[3]
-        p3 = torch.FloatTensor([[w3, 0, 0, 0], [0, h3, 0, 0], [0, 0, w3, 0], [0, 0, 0, h3]]).cuda()
+        p3 = torch.FloatTensor([[w3, 0, 0, 0], [0, h3, 0, 0], [0, 0, w3, 0], [0, 0, 0, h3]])
 
         # x, y, w, h --> x1, y1, x2, y2
         assert boxLoc.data.size()[1] == 4
-        postfix = torch.FloatTensor([[1, 0, 1, 0], [0, 1, 0, 1], [-0.5, 0, 0.5, 0], [0, -0.5, 0, 0.5]]).cuda()
+        postfix = torch.FloatTensor([[1, 0, 1, 0], [0, 1, 0, 1], [-0.5, 0, 0.5, 0], [0, -0.5, 0, 0.5]])
         boxNew = boxLoc.mm(postfix).clamp(min=0, max=1)
 
         # input = torch.rand(2, 1, 10, 10)
@@ -242,7 +242,7 @@ def eval(model, test_dirs):
         count += 1
         YI = [[int(ee) for ee in el.split('_')[:7]] for el in labels]
         if use_gpu:
-            x = XI.cuda(0)
+            x = XI
         else:
             x = XI
         # Forward pass: Compute predicted y by passing x to the model
@@ -277,8 +277,8 @@ def train_model(model, criterion, optimizer, num_epochs=25):
             YI = [[int(ee) for ee in el.split('_')[:7]] for el in labels]
             Y = np.array([el.numpy() for el in Y]).T  # 真实值[cen_x,cen_y,w,h]
             if use_gpu:
-                x = XI.cuda(0)
-                y = torch.FloatTensor(Y).cuda(0)
+                x = XI
+                y = torch.FloatTensor(Y)
             else:
                 x = XI
                 y = torch.FloatTensor(Y)
@@ -291,10 +291,10 @@ def train_model(model, criterion, optimizer, num_epochs=25):
 
             # Compute and print loss
             loss = 0.0
-            loss += 0.8 * nn.L1Loss().cuda()(fps_pred[:][:2], y[:][:2])  # 定位cen_x和cen_y损失
-            loss += 0.2 * nn.L1Loss().cuda()(fps_pred[:][2:], y[:][2:])  # 定位w和h损失
+            loss += 0.8 * nn.L1Loss()(fps_pred[:][:2], y[:][:2])  # 定位cen_x和cen_y损失
+            loss += 0.2 * nn.L1Loss()(fps_pred[:][2:], y[:][2:])  # 定位w和h损失
             for j in range(7):  #每个号码牌的交叉熵损失
-                l = torch.LongTensor([el[j] for el in YI]).cuda(0)
+                l = torch.LongTensor([el[j] for el in YI])
                 loss += criterion(y_pred[j], l)  # 分类损失
 
             # Zero gradients, perform a backward pass, and update the weights.
@@ -346,20 +346,20 @@ if __name__ == '__main__':
 
     args = {'my_visdom': 'rpnet',
     'epochs': 10000,
-    'images': '/content/drive/MyDrive/ccpd/data/CCPD2020/ccpd_green',
+    'images': '/home/mark/Music/projects/Plate_detection/CCPD_CNN/data/CCPD2020/ccpd_green',
     'batchsize': 12,
     'start_epoch': 0,
     'test': 'some,test',
     'resume': '111',
     'folder': 'train',
-    'writeFile': '/content/drive/MyDrive/ccpd/weight/fh02.pth'
+    'writeFile': '/home/mark/Music/projects/Plate_detection/CCPD_CNN/weight/fh02.pth'
     }
 
 
     # args = vars(ap.parse_args())
-    vis=Visdom(args['my_visdom'])
+    # vis=Visdom(args['my_visdom'])
 
-    wR2Path = '/content/drive/MyDrive/ccpd/weight/wR2.pth'
+    wR2Path = '/home/mark/Music/projects/Plate_detection/CCPD_CNN/weight/wR2.pth'
     use_gpu = torch.cuda.is_available()
     print(use_gpu)
 
@@ -392,12 +392,12 @@ if __name__ == '__main__':
         model_conv = fh02(numPoints, numClasses)
         model_conv = torch.nn.DataParallel(model_conv, device_ids=range(torch.cuda.device_count()))
         model_conv.load_state_dict(torch.load(resume_file))
-        model_conv = model_conv.cuda()
+        model_conv = model_conv
     else:
         model_conv = fh02(numPoints, numClasses, wR2Path)
         if use_gpu:
             model_conv = torch.nn.DataParallel(model_conv, device_ids=range(torch.cuda.device_count()))
-            model_conv = model_conv.cuda()
+            model_conv = model_conv
 
     print(model_conv)
     print('模型参数量' + str(get_n_params(model_conv)))

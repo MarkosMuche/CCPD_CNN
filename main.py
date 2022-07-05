@@ -230,12 +230,11 @@ def isEqual(labelGT, labelP):
 
 
 if __name__ == '__main__':
-    ap = argparse.ArgumentParser()
-    ap.add_argument("-i", "--input", default='data/image/',
-                    help="path to the input folder")
-    ap.add_argument("-m", "--model", default='weight/fh02.pth',
-                    help="path to the model file")
-    args = vars(ap.parse_args())
+    
+    args = {
+        'input': '/content/drive/MyDrive/ccpd/data/image',
+        'model': '/content/drive/MyDrive/ccpd/weight/fh02.pth'
+    }
     # use_gpu = torch.cuda.is_available()
     use_gpu = False
     print(use_gpu)

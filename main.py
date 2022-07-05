@@ -169,7 +169,7 @@ class fh02(nn.Module):
         self.wR2 = torch.nn.DataParallel(self.wR2, device_ids=range(torch.cuda.device_count()))
         if not path is None:
             self.wR2.load_state_dict(torch.load(path))
-            # self.wR2 = self.wR2.cuda()
+            # self.wR2 = self.wR2
         # for param in self.wR2.parameters():
         #     param.requires_grad = False
 
@@ -191,15 +191,15 @@ class fh02(nn.Module):
         # 多尺度卷积：在不同层数的feature map在通道维数上进行拼接，然后预测
         with torch.no_grad():
             h1, w1 = _x1.data.size()[2], _x1.data.size()[3]
-            p1 = torch.FloatTensor([[w1, 0, 0, 0], [0, h1, 0, 0], [0, 0, w1, 0], [0, 0, 0, h1]]).cuda()
+            p1 = torch.FloatTensor([[w1, 0, 0, 0], [0, h1, 0, 0], [0, 0, w1, 0], [0, 0, 0, h1]])
             h2, w2 = _x3.data.size()[2], _x3.data.size()[3]
-            p2 = torch.FloatTensor([[w2, 0, 0, 0], [0, h2, 0, 0], [0, 0, w2, 0], [0, 0, 0, h2]]).cuda()
+            p2 = torch.FloatTensor([[w2, 0, 0, 0], [0, h2, 0, 0], [0, 0, w2, 0], [0, 0, 0, h2]])
             h3, w3 = _x5.data.size()[2], _x5.data.size()[3]
-            p3 = torch.FloatTensor([[w3, 0, 0, 0], [0, h3, 0, 0], [0, 0, w3, 0], [0, 0, 0, h3]]).cuda()
+            p3 = torch.FloatTensor([[w3, 0, 0, 0], [0, h3, 0, 0], [0, 0, w3, 0], [0, 0, 0, h3]])
 
             # x, y, w, h --> x1, y1, x2, y2
             assert boxLoc.data.size()[1] == 4
-            postfix = torch.FloatTensor([[1, 0, 1, 0], [0, 1, 0, 1], [-0.5, 0, 0.5, 0], [0, -0.5, 0, 0.5]]).cuda()
+            postfix = torch.FloatTensor([[1, 0, 1, 0], [0, 1, 0, 1], [-0.5, 0, 0.5, 0], [0, -0.5, 0, 0.5]])
             boxNew = boxLoc.mm(postfix).clamp(min=0, max=1)
 
             # input = torch.rand(2, 1, 10, 10)
@@ -232,8 +232,8 @@ def isEqual(labelGT, labelP):
 if __name__ == '__main__':
     
     args = {
-        'input': '/content/drive/MyDrive/ccpd/data/image',
-        'model': '/content/drive/MyDrive/ccpd/weight/fh02.pth'
+        'input': '/home/mark/Music/projects/Plate_detection/CCPD_CNN/data/image',
+        'model': '/home/mark/Music/projects/Plate_detection/CCPD_CNN/weight/fh02.pth'
     }
     # use_gpu = torch.cuda.is_available()
     use_gpu = False
@@ -257,8 +257,13 @@ if __name__ == '__main__':
 
     model_conv = fh02(numPoints, numClasses)
     model_conv = torch.nn.DataParallel(model_conv, device_ids=range(torch.cuda.device_count()))
-    model_conv.load_state_dict(torch.load(resume_file))
-    model_conv = model_conv.cuda()
+    # model_conv.load_state_dict(torch.load(resume_file))
+    model_conv.load_state_dict(torch.load(resume_file,map_location='cpu'))
+    try:
+        model_conv = model_conv
+    except:
+       pass
+
     model_conv.eval()
 
     dst = demoTestDataLoader(args["input"].split(','), imgSize)
@@ -291,14 +296,14 @@ if __name__ == '__main__':
         # PIL图片上打印汉字
         pilImg = Image.fromarray(cv2.cvtColor(cv2Img, cv2.COLOR_BGR2RGB))
         draw = ImageDraw.Draw(pilImg)
-        font = ImageFont.truetype("simhei.ttf", 40, encoding="utf-8")  # 参数1：字体文件路径，参数2：字体大小
+        font = ImageFont.truetype(r'/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf', 70)
         draw.text((int(left_up[0]), int(left_up[1]) - 40), lpn, (255, 0, 0),
-                  font=font)  # 参数1：打印坐标，参数2：文本，参数3：字体颜色，参数4：字体
+                 font=font )  # 参数1：打印坐标，参数2：文本，参数3：字体颜色，参数4：字体
         # PIL图片转cv2 图片
         cv2charimg = cv2.cvtColor(np.array(pilImg), cv2.COLOR_RGB2BGR)
-        # cv2.putText(cv2Img, lpn, (int(left_up[0]), int(left_up[1])-20), cv2.FONT_ITALIC, 2, (0, 0, 255))
+        cv2.putText(cv2Img, lpn, (int(left_up[0]), int(left_up[1])-20), cv2.FONT_ITALIC, 2, (0, 0, 255))
         dstFileName = 'result/' + ims[0][-5:-4] + '.jpg'
         cv2.imshow('charimg',cv2charimg)
         cv2.waitKey(0)
-        # cv2.imwrite(dstFileName, cv2charimg)
-        # print('图片保存地址', dstFileName)
+        cv2.imwrite(dstFileName, cv2charimg)
+        print('图片保存地址', dstFileName)

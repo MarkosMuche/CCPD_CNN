@@ -3,8 +3,6 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 import os
-from visdom import Visdom
-import argparse
 from time import time 
 from load_data import *
 from roi_pooling import roi_pooling_ims
@@ -342,7 +340,6 @@ if __name__ == '__main__':
     #                 help="folder to store model")
     # ap.add_argument("-w", "--writeFile", default='weight/fh02.out',
     #                 help="file for output")
-    # ap.add_argument("--visdom",type=str,default="rpnet",help="name of visdom")
 
     args = {'my_visdom': 'rpnet',
     'epochs': 10000,
@@ -357,7 +354,6 @@ if __name__ == '__main__':
 
 
     # args = vars(ap.parse_args())
-    vis=Visdom(args['my_visdom'])
 
     wR2Path = '/content/drive/MyDrive/ccpd/weight/wR2.pth'
     use_gpu = torch.cuda.is_available()

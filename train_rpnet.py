@@ -262,15 +262,19 @@ def eval(model, test_dirs):
 
 #训练模型
 def train_model(model, criterion, optimizer, num_epochs=25):
+    
+    print('training starting..........')
     for epoch in range(epoch_start, num_epochs):
+        print(f'epoch{epoch+1}started.')
         lossAver = []
         model.train(True)
         start = time()
 
         for i, (XI, Y, labels, ims) in enumerate(trainloader):
             if not len(XI) == batchSize:
-
+                
                 continue
+            
             # labels为对应车牌号(0_0_22_27_27_33_16)
             YI = [[int(ee) for ee in el.split('_')[:7]] for el in labels]
             Y = np.array([el.numpy() for el in Y]).T  # 真实值[cen_x,cen_y,w,h]
@@ -301,6 +305,8 @@ def train_model(model, criterion, optimizer, num_epochs=25):
             optimizer.step()
             lrScheduler.step()
 
+            # print the losses
+            print(f'The loss at the batch {i+1} is {loss}')
             try:
                 lossAver.append(loss.item())
             except:
@@ -312,8 +318,13 @@ def train_model(model, criterion, optimizer, num_epochs=25):
                         i * batchSize, time() - start,
                         sum(lossAver) / len(lossAver) if len(lossAver) > 0 else 'NoLoss'))
                 torch.save(model.state_dict(), storeName)
-        print('%s %s %s\n' % (epoch, sum(lossAver) / len(lossAver), time() - start))
+        # end of epoch
+        print('==========================================')
+        print(f'Training epoch {epoch+1} finished!')
+        print('epoch: %s, Average loss: %s, time taken: %ss\n' % (epoch+1, sum(lossAver) / len(lossAver), time() - start))
+        print('evaluating........')
         model.eval()
+        print('Finished Evaluating')
         count, correct, error, precision, avgTime = eval(model, testDirs)
         with open(args['writeFile'], 'a') as outF:
             outF.write('%s %s %s\n' % (epoch, sum(lossAver) / len(lossAver), time() - start))
@@ -343,10 +354,10 @@ if __name__ == '__main__':
 
     args = {'my_visdom': 'rpnet',
     'epochs': 10000,
-    'images': '/content/drive/MyDrive/ccpd/data/CCPD2020/ccpd_green',
-    'batchsize': 12,
+    'images': '/content/drive/MyDrive/ccpd/data/CCPD2020/ccpd_green/train',
+    'batchsize': 60,
     'start_epoch': 0,
-    'test': 'some,test',
+    'test': '/content/drive/MyDrive/ccpd/data/CCPD2020/ccpd_green/test',
     'resume': '111',
     'folder': 'train',
     'writeFile': '/content/drive/MyDrive/ccpd/weight/fh02.pth'
